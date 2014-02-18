@@ -24,13 +24,11 @@ class Question:
 
 
 class Path:
-    def __init__(self, seed=None):
-        if seed is None:
-            seed = []
-        self.path = seed
+    def __init__(self, raw_path):
+        self.path = raw_path
 
-    def __iter__(self):
-        return self.path.__iter__()
+    def __getitem__(self, item):
+        return self.path[item]
 
     def __str__(self):
         return ' -> '.join([a.short for a in self.path])
@@ -40,6 +38,22 @@ class Path:
 
     def append(self, item):
         self.path.append(item)
+
+
+class Paths:
+    def __init__(self):
+        self.paths = []
+
+    def __getitem__(self, item):
+        return self.paths[item]
+
+    def append(self, item):
+        self.paths.append(item)
+
+    # Rejection clauses have to be a list of ints (aid).
+    def filter_out_rejections(self, rejection_clauses):
+        filter_func = lambda path: path[-1].aid not in rejection_clauses
+        self.paths = filter(filter_func, self.paths)
 
 
 class Questions:
@@ -68,19 +82,16 @@ class Questions:
             for a in q.linked_answers:
                 a.linked_question = q
 
-    # TODO: Rewrite recursive helper so that it correctly handles endpoint
-    # answers
     def generate_paths(self):
         def recursive_helper(current_question, current_path):
-            if current_question is not None:
-                for a in current_question.get_answers():
-                    recursive_helper(
-                        a.linked_question, Path(current_path.path + [a]))
+            for a in current_question.get_answers():
+                if a.linked_question is None:
+                    self.paths.append(Path(current_path + [a]))
+                else:
+                    recursive_helper(a.linked_question, current_path + [a])
 
-            self.paths.append(current_path)
-
-        self.paths = []
-        recursive_helper(self.questions[0], Path())
+        self.paths = Paths()
+        recursive_helper(self.questions[0], [])
 
         return self.paths
 
