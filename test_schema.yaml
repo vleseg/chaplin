@@ -1,0 +1,49 @@
+questions:
+  - text: Test question 1
+    answers:
+      - id: 0
+        text: Test answer 1
+        short: TA 1
+      - id: 1
+        text: Test answer 2
+        short: TA 2
+    linked_answers: null
+  - text: Test question 2
+    answers:
+      - id: 2
+        text: Test answer 3
+        short: TA 3
+      - id: 3
+        text: Test answer 4
+        short: TA 4
+    linked_answers: [0]
+  - text: Test question 3
+    answers:
+      - id: 4
+        text: Test answer 5
+        short: TA 5
+      - id: 5
+        text: Test answer 6
+        short: TA 6
+    linked_answers: [3]
+  - text: Test question 4
+    answers:
+      - id: 6
+        text: Test answer 7
+        short: TA 7
+      - id: 7
+        text: Test answer 8
+        short: TA 8
+    linked_answers: [4,5]
+rejection_clauses: [1,7]
+documents:
+  - text: Test document 1
+    linked_answer: 0
+  - text: Test document 2
+    linked_answer: 2
+  - text: Test document 3
+    linked_answer: 3
+  - text: Test document 4
+    linked_answer: 4
+  - text: Test document 5
+    linked_answer: 5
