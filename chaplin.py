@@ -4,6 +4,10 @@ class Answer:
         self.text = source["text"]
         self.short = source["short"]
         self.linked_question = None
+        self.linked_documents = []
+
+    def attach_document(self, document):
+        self.linked_documents.append(document)
 
 
 class Question:
@@ -23,9 +27,21 @@ class Question:
         return self.aid_to_answer_mapping.values()
 
 
+class Case:
+    def __init__(self, raw_case):
+        self.case = raw_case
+
+    def __repr__(self):
+        return ''.join([str(d.did) for d in self.case])
+
+    def __str__(self):
+        return ''.join(d.text for d in self.case)
+
+
 class Path:
-    def __init__(self, raw_path):
-        self.path = raw_path
+    def __init__(self, seed):
+        self.path = seed
+        self.case = []
 
     def __getitem__(self, item):
         return self.path[item]
@@ -39,7 +55,13 @@ class Path:
     def append(self, item):
         self.path.append(item)
 
+    def generate_case(self):
+        reduction_lambda = lambda x, y: x + y.linked_documents
+        raw_case = reduce(reduction_lambda, self.path, [])
+        self.case = Case(raw_case)
 
+
+# TODO: implement unification of paths of identical cases at output time
 class Paths:
     def __init__(self):
         self.paths = []
@@ -54,6 +76,10 @@ class Paths:
     def filter_out_rejections(self, rejection_clauses):
         filter_func = lambda path: path[-1].aid not in rejection_clauses
         self.paths = filter(filter_func, self.paths)
+
+    def generate_cases(self):
+        for p in self.paths:
+            p.generate_case()
 
 
 class Questions:
@@ -98,6 +124,7 @@ class Questions:
 
 class Document:
     def __init__(self, source):
+        self.did = source["id"]
         self.text = source["text"]
         self.raw_linked_answer = source["linked_answer"]
         self.linked_answer = None
@@ -122,3 +149,4 @@ class Documents:
     def link_actual_answers(self, answers):
         for d in self.documents:
             d.linked_answer = answers[d.raw_linked_answer]
+            d.linked_answer.attach_document(d)

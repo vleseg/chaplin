@@ -37,13 +37,18 @@ questions:
     linked_answers: [4,5]
 rejection_clauses: [1,7]
 documents:
-  - text: Test document 1
+  - id: 0
+    text: Test document 1
     linked_answer: 0
-  - text: Test document 2
+  - id: 1
+    text: Test document 2
     linked_answer: 2
-  - text: Test document 3
+  - id: 2
+    text: Test document 3
     linked_answer: 3
-  - text: Test document 4
+  - id: 3
+    text: Test document 4
     linked_answer: 4
-  - text: Test document 5
+  - id: 4
+    text: Test document 5
     linked_answer: 5

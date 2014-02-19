@@ -11,9 +11,9 @@ class TestChaplin(unittest.TestCase):
             source = yaml.load(f.read())
         self.questions = Questions(source['questions'])
         self.rejection_clauses = source['rejection_clauses']
-        documents = Documents(source['documents'])
+        self.documents = Documents(source['documents'])
 
-        documents.link_actual_answers(self.questions.answers)
+        self.documents.link_actual_answers(self.questions.answers)
         self.questions.link_answers()
 
     def testPathGeneration(self):
@@ -31,3 +31,9 @@ class TestChaplin(unittest.TestCase):
         self.assertEqual(str(paths[0]), 'TA 1 -> TA 3')
         self.assertEqual(str(paths[1]), 'TA 1 -> TA 4 -> TA 5 -> TA 7')
         self.assertEqual(str(paths[2]), 'TA 1 -> TA 4 -> TA 6 -> TA 7')
+
+    # TODO: write tests to check cases handling
+    def testDocuments(self):
+        paths = self.questions.generate_paths()
+        paths.filter_out_rejections(self.rejection_clauses)
+        paths.generate_cases()
