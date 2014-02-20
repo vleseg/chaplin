@@ -1,4 +1,3 @@
-# coding=utf-8
 import unittest
 import yaml
 # Local imports
@@ -32,8 +31,17 @@ class TestChaplin(unittest.TestCase):
         self.assertEqual(str(paths[1]), 'TA 1 -> TA 4 -> TA 5 -> TA 7')
         self.assertEqual(str(paths[2]), 'TA 1 -> TA 4 -> TA 6 -> TA 7')
 
-    # TODO: write tests to check cases handling
     def testDocuments(self):
         paths = self.questions.generate_paths()
         paths.filter_out_rejections(self.rejection_clauses)
         paths.generate_cases()
+        test_str = lambda i: str(paths[i].case)
+        test_repr = lambda i: repr(paths[i].case)
+        self.assertEqual(test_str(0), 'Test document 1 -> Test document 2')
+        self.assertEqual(test_repr(1), '0 -> 2 -> 3')
+        self.assertEqual(test_str(2),
+            'Test document 1 -> Test document 3 -> Test document 5')
+
+
+if __name__ == "__main__":
+    unittest.main()
