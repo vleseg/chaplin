@@ -19,7 +19,7 @@ class Question:
 
         for raw_a in source["answers"]:
             self.aid_to_answer_mapping[raw_a["id"]] = Answer(raw_a)
-    
+
     def get_answers_dict(self):
         return self.aid_to_answer_mapping
 
@@ -32,10 +32,10 @@ class Case:
         self.case = raw_case
 
     def __repr__(self):
-        return ''.join([str(d.did) for d in self.case])
+        return ' -> '.join([str(d.did) for d in self.case])
 
     def __str__(self):
-        return ''.join(d.text for d in self.case)
+        return ' -> '.join([d.text for d in self.case])
 
 
 class Path:
@@ -92,10 +92,10 @@ class Questions:
             self.questions.append(Question(raw_q))
         for q in self.questions:
             self.answers.update(q.get_answers_dict())
-        
+
     def __iter__(self):
         return self.questions.__iter__()
-        
+
     def __getitem__(self, i):
         return self.questions[i]
 
@@ -128,24 +128,24 @@ class Document:
         self.text = source["text"]
         self.raw_linked_answer = source["linked_answer"]
         self.linked_answer = None
-        
+
     def get_linked_answer(self):
         return self.linked_answer
-    
-        
+
+
 class Documents:
     def __init__(self, source):
         self.documents = []
-        
+
         for raw_d in source:
             self.documents.append(Document(raw_d))
-        
+
     def __iter__(self):
         return self.documents.__iter__()
-        
+
     def __getitem__(self, i):
         return self.documents[i]
-        
+
     def link_actual_answers(self, answers):
         for d in self.documents:
             d.linked_answer = answers[d.raw_linked_answer]
