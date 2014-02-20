@@ -11,11 +11,22 @@ class Case:
     def __eq__(self, other):
         return self.footprint == other.footprint
 
+    def __str__(self):
+        return str(self.get_paths_footprint()) + ': ' + ', '.join([
+            document.text for document in self.get_all_documents()])
+
+    def __repr__(self):
+        return str(self.get_paths_footprint()) + ': ' + ', '.join(
+            map(str, self.footprint))
+
     def get_paths_footprint(self):
-        return tuple([path.footprint for path in self.paths])
+        return tuple(path.footprint for path in self.paths)
 
     def add_path(self, path):
         self.paths.append(path)
+
+    def get_all_documents(self):
+        return self.did_to_document.values()
 
     @staticmethod
     def get_footprint_and_documents(path):
@@ -37,8 +48,11 @@ class Cases:
             self.footprint_to_case[footprint] = case
         else:
             case = self.footprint_to_case[footprint]
-            case.add_path()
-        self.paths_to_case[case.get_paths_footprint] = case
+            case.add_path(path)
+        self.paths_to_case[case.get_paths_footprint()] = case
+
+    def get_all(self):
+        return self.paths_to_case.values()
 
 
 class Path:
