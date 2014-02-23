@@ -33,12 +33,12 @@ class Case:
         documents = list(chain(
             *[answer.linked_documents for answer in path.get_answers()]
         ))
-        return tuple(document.did for document in documents), documents
+        return tuple(sorted(document.did for document in documents)), documents
 
 
 class Cases:
     def __init__(self):
-        self.paths_to_case = OrderedDict()
+        self.paths_to_case = {}
         self.footprint_to_case = OrderedDict()
 
     def handle_path(self, path):
@@ -48,6 +48,7 @@ class Cases:
             self.footprint_to_case[footprint] = case
         else:
             case = self.footprint_to_case[footprint]
+            del self.paths_to_case[case.get_paths_footprint()]
             case.add_path(path)
         self.paths_to_case[case.get_paths_footprint()] = case
 

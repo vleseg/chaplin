@@ -40,12 +40,13 @@ class TestChaplin(unittest.TestCase):
             ['0', '1 -> 3', '1 -> 4 -> 5 -> 7', '1 -> 4 -> 6 -> 7']
         )
 
-    # TODO; Figure out, why tests fail.
     def testCases(self):
         self.paths.trim_rejections()
         cases = self.paths.generate_cases()
+        sorted_cases = sorted(
+            cases.get_all(), key=lambda case: case.get_paths_footprint())
         self.assertEqual(
-            [str(case) for case in cases.get_all()],
+            [str(case) for case in sorted_cases],
             ['((0,), (1, 4, 5, 7)): Test document 1, Test document 3, '
              'Test document 4',
              '((1, 3),): Test document 1, Test document 2',
@@ -53,8 +54,8 @@ class TestChaplin(unittest.TestCase):
              'Test document 5']
         )
         self.assertEqual(
-            [repr(case) for case in cases.get_all()],
-            ['((0,), (1, 4, 5, 7)): 0, 3, 4', '((1, 3),): 0, 1',
+            [repr(case) for case in sorted_cases],
+            ['((0,), (1, 4, 5, 7)): 0, 2, 3', '((1, 3),): 0, 1',
              '((1, 4, 6, 7),): 0, 2, 4']
         )
 
