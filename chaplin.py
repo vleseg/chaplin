@@ -3,28 +3,37 @@ from collections import OrderedDict
 from itertools import chain
 
 
+DOCUMENT = 0
+REJECTION = 1
+
+
 class ChaplinException(BaseException):
     pass
 
 
 class Case(object):
-    def __init__(self, path, footprint, documents):
+    def __init__(self, path, footprint, results):
         self.footprint = footprint
+        if path.is_rejection_path:
+            self.is_rejection_case = True
+            self.rid_to_rejection = {self.footprint, results}
         self.paths = [path]
-        self.did_to_document = OrderedDict(zip(self.footprint, documents))
+        self.did_to_document = OrderedDict(zip(self.footprint, results))
+        # Will be filled later.
+        self.is_rejection_case = False
 
     def __eq__(self, other):
         return self.footprint == other.footprint
 
     def __str__(self):
-        return str(self.get_paths_footprint()) + ': ' + ', '.join([
+        return str(self.get_multipath_footprint()) + ': ' + ', '.join([
             document.text for document in self.get_all_documents()])
 
     def __repr__(self):
-        return str(self.get_paths_footprint()) + ': ' + ', '.join(
+        return str(self.get_multipath_footprint()) + ': ' + ', '.join(
             map(str, self.footprint))
 
-    def get_paths_footprint(self):
+    def get_multipath_footprint(self):
         return tuple(path.footprint for path in self.paths)
 
     def add_path(self, path):
@@ -33,13 +42,12 @@ class Case(object):
     def get_all_documents(self):
         return self.did_to_document.values()
 
-    # FIXME: must correctly handle regular and rejection paths
     @staticmethod
     def get_footprint_and_results(path):
-        documents = list(chain(
-            *[answer.linked_documents for answer in path.get_answers()]
+        results = list(chain(
+            *[answer.linked_results for answer in path.get_answers()]
         ))
-        return tuple(sorted(document.did for document in documents)), documents
+        return tuple(sorted(result.rid for result in results)), results
 
 
 class Cases(object):
@@ -49,36 +57,37 @@ class Cases(object):
 
     def __str__(self):
         sorted_cases = sorted(
-            self.get_all(), key=lambda case: case.get_paths_footprint())
+            self.get_all(), key=lambda case: case.get_multipath_footprint())
         return '\n'.join(unicode(case) for case in sorted_cases)
 
     def handle_path(self, path):
-        footprint, documents = Case.get_footprint_and_results(path)
+        footprint, results = Case.get_footprint_and_results(path)
         if footprint not in self.footprint_to_case:
-            case = Case(path, footprint, documents)
+            case = Case(path, footprint, results)
             self.footprint_to_case[footprint] = case
         else:
             case = self.footprint_to_case[footprint]
-            del self.paths_to_case[case.get_paths_footprint()]
+            del self.paths_to_case[case.get_multipath_footprint()]
             case.add_path(path)
-        self.paths_to_case[case.get_paths_footprint()] = case
+        self.paths_to_case[case.get_multipath_footprint()] = case
 
     def get_all(self):
         return self.paths_to_case.values()
 
 
+# FIXME: reimplement collapse routine
 class Path(object):
     def __init__(self, raw_path, collapse_rejection):
-        if collapse_rejection:
-            only_answer = raw_path.last_answer
-            self.footprint = only_answer.aid
-            self.aid_to_answer = {only_answer.aid: only_answer}
-            self.is_rejection_path = True
-        else:
-            self.footprint = tuple(answer.aid for answer in raw_path)
-            self.aid_to_answer = OrderedDict(zip(self.footprint, raw_path))
-            self.last_answer = raw_path[-1]
-            self.is_rejection_path = False
+        # if collapse_rejection:
+        #     only_answer = raw_path.last_answer
+        #     self.footprint = only_answer.aid
+        #     self.aid_to_answer = {only_answer.aid: only_answer}
+        #     self.is_rejection_path = True
+        # else:
+        self.footprint = tuple(answer.aid for answer in raw_path)
+        self.aid_to_answer = OrderedDict(zip(self.footprint, raw_path))
+        self.last_answer = raw_path[-1]
+        self.is_rejection_path = False
 
     def __repr__(self):
         return ' -> '.join(map(str, self.footprint))
@@ -124,6 +133,9 @@ class Paths(object):
             self.trim_rejections()
         elif mode == "collapse":
             self.collapse_rejections()
+        else:
+            raise ChaplinException(
+                "Unknown case generation mode: {}".format(mode))
 
         cases = Cases()
         for footprint in self.footprint_to_path:
@@ -142,12 +154,9 @@ class Answer(object):
         self.linked_results = []
         self.is_rejection_clause = False
 
-    def attach_document(self, document):
-        self.linked_results.append(document)
-
-    def attach_rejection(self, rejection):
-        self.is_rejection_clause = True
-        self.linked_results = [rejection]
+    def attach_result(self, result):
+        self.linked_results.append(result)
+        self.is_rejection_clause = result.type == REJECTION
 
 
 class Answers(object):
@@ -223,48 +232,34 @@ class Questions(object):
         return self.paths
 
 
-class Document(object):
-    def __init__(self, raw_document):
-        self.did = raw_document["id"]
-        self.text = raw_document["text"]
-        self.raw_linked_answers = raw_document["linked_answers"]
+class Result(object):
+    def __init__(self, raw_result, type):
+        self.type = type
+        self.rid = str(raw_result["id"])
+        if type == REJECTION:
+            self.rid += 'r'
+        self.text = raw_result["text"]
+        self.raw_linked_answers = raw_result["linked_answers"]
         # Will be filled later.
         self.linked_answers = []
 
 
-class Rejection(object):
-    def __init__(self, raw_rejection):
-        self.rid = raw_rejection["id"]
-        self.text = raw_rejection["text"]
-        self.raw_invoking_answers = raw_rejection["invoking_answers"]
-        # Will be filled later
-        self.invoking_answers = []
-
-
 class Results(object):
     def __init__(self, raw_documents, raw_rejections):
-        self.did_to_document = OrderedDict()
-        self.rid_to_rejection = OrderedDict()
+        self.rid_to_result = OrderedDict()
 
         for raw_document in raw_documents:
-            document = Document(raw_document)
-            self.did_to_document[document.did] = document
-            
+            document = Result(raw_document, type=DOCUMENT)
+            self.rid_to_result[document.rid] = document
+
         for raw_rejection in raw_rejections:
-            rejection = Rejection(raw_rejection)
-            self.rid_to_rejection[rejection.rid] = rejection
+            rejection = Result(raw_rejection, type=REJECTION)
+            self.rid_to_result[rejection.rid] = rejection
 
-    def get_all_documents(self):
-        return self.did_to_document.values()
-
-    def get_all_rejections(self):
-        return self.rid_to_rejection.values()
+    def get_all(self):
+        return self.rid_to_result.values()
 
     def link_answers(self, aid_to_answer):
-        for document in self.get_all_documents():
-            for aid in document.raw_linked_answers:
-                aid_to_answer[aid].attach_document(document)
-
-        for rejection in self.get_all_rejections():
-            for aid in rejection.raw_invoking_answers:
-                aid_to_answer[aid].attach_rejection(rejection)
+        for result in self.get_all():
+            for aid in result.raw_linked_answers:
+                aid_to_answer[aid].attach_result(result)

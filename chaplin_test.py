@@ -44,7 +44,7 @@ class TestChaplin(unittest.TestCase):
     def testCasesWithTrimmedRejections(self):
         cases = self.paths.generate_cases(mode="trim")
         sorted_cases = sorted(
-            cases.get_all(), key=lambda case: case.get_paths_footprint())
+            cases.get_all(), key=lambda case: case.get_multipath_footprint())
         self.assertEqual(
             [str(case) for case in sorted_cases],
             ['((0,), (1, 4, 5, 7)): Test document 1, Test document 3, '
@@ -62,7 +62,7 @@ class TestChaplin(unittest.TestCase):
     def testCasesWithRejectionsIntact(self):
         cases = self.paths.generate_cases(mode="collapse")
         sorted_cases = sorted(
-            cases.get_all(), key=lambda case: case.get_paths_footprint())
+            cases.get_all(), key=lambda case: case.get_multipath_footprint())
         self.assertEqual(
             [str(case) for case in sorted_cases],
             ['((0,), (1, 4, 5, 7)): Test document 1, Test document 3, '

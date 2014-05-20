@@ -45,10 +45,10 @@ questions:
 rejections:
   - id: 0
     text: Test rejection 1
-    invoking_answers: [2]
+    linked_answers: [2]
   - id: 1
     text: Test rejection 2
-    invoking_answers: [8]
+    linked_answers: [8]
 documents:
   - id: 0
     text: Test document 1
