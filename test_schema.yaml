@@ -42,7 +42,13 @@ questions:
         text: Test answer 9
         short: TA 9
     parent_answers: [5,6]
-rejection_clauses: [2,8]
+rejections:
+  - id: 0
+    text: Test rejection 1
+    invoking_answers: [2]
+  - id: 1
+    text: Test rejection 2
+    invoking_answers: [8]
 documents:
   - id: 0
     text: Test document 1
