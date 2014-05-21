@@ -12,13 +12,36 @@ class ChaplinException(BaseException):
 
 
 class Case(object):
+    """
+    This class resembles a case, i.e. a set of results (see: Result),
+    which can be: documents, that are required from an applicant for a public
+    service in a particular situation or a rejection with the description,
+    stating why in a particular situation an applicant can't actually apply
+    for a service.
+
+    The situation is being defined by answering (see: Answer) a set of
+    questions (see: Question).
+
+    A unique hashable representation of a case is called 'footprint', which is
+    simply a tuple of ids of results, that constitute a case.
+
+    A path (see: Path) is a sequence of answers, that lead to the case, or,
+    if it is a rejection case -- an answer, which is always the last in any
+    sequence, that leads to rejection.
+
+    Both document and rejection cases may have more than one path, that
+    leads to them. Just like the case, path (or collection of paths) is
+    unique and can be expressed as a hashable value: tuple of tuples of ids
+    of answers, that form a path or paths.
+    """
+
     def __init__(self, path, footprint, results):
         self.footprint = footprint
         if path.is_rejection_path:
             self.is_rejection_case = True
             self.rid_to_rejection = {self.footprint, results}
         self.paths = [path]
-        self.did_to_document = OrderedDict(zip(self.footprint, results))
+        self.rid_to_result = OrderedDict(zip(self.footprint, results))
         # Will be filled later.
         self.is_rejection_case = False
 
@@ -27,7 +50,7 @@ class Case(object):
 
     def __str__(self):
         return str(self.get_multipath_footprint()) + ': ' + ', '.join([
-            document.text for document in self.get_all_documents()])
+            result.text for result in self.get_all_results()])
 
     def __repr__(self):
         return str(self.get_multipath_footprint()) + ': ' + ', '.join(
@@ -39,8 +62,8 @@ class Case(object):
     def add_path(self, path):
         self.paths.append(path)
 
-    def get_all_documents(self):
-        return self.did_to_document.values()
+    def get_all_results(self):
+        return self.rid_to_result.values()
 
     @staticmethod
     def get_footprint_and_results(path):
@@ -75,18 +98,12 @@ class Cases(object):
         return self.paths_to_case.values()
 
 
-# FIXME: reimplement collapse routine
 class Path(object):
-    def __init__(self, raw_path, collapse_rejection):
-        # if collapse_rejection:
-        #     only_answer = raw_path.last_answer
-        #     self.footprint = only_answer.aid
-        #     self.aid_to_answer = {only_answer.aid: only_answer}
-        #     self.is_rejection_path = True
-        # else:
+    def __init__(self, raw_path):
         self.footprint = tuple(answer.aid for answer in raw_path)
         self.aid_to_answer = OrderedDict(zip(self.footprint, raw_path))
         self.last_answer = raw_path[-1]
+        # Will be filled later.
         self.is_rejection_path = False
 
     def __repr__(self):
@@ -103,34 +120,32 @@ class Paths(object):
     def __init__(self):
         self.footprint_to_path = OrderedDict()
 
-    def add_path(self, raw_path, collapse_rejection=False):
-        path = Path(raw_path, collapse_rejection)
+    def add_path(self, raw_path):
+        path = Path(raw_path)
         self.footprint_to_path[path.footprint] = path
 
     def collapse_rejections(self):
         last_answers_pool = []
-        for path in self.values():
+        for path in self.get_all():
             if path.last_answer.is_rejection_clause:
-                if path.last_answer not in last_answers_pool:
-                    last_answers_pool.append(path.last_answer)
-                    self.add_path(path, collapse_rejection=True)
+                candidate = path.last_answer
+                if candidate not in last_answers_pool:
+                    last_answers_pool.append(candidate)
                 del self.footprint_to_path[path.footprint]
+                self.add_path([candidate])
 
     def get_all(self):
         return self.footprint_to_path.values()
 
-    def trim_rejections(self):
-        for path in self.values():
+    def exclude_rejections(self):
+        for path in self.get_all():
             if path.last_answer.is_rejection_clause:
                 del self.footprint_to_path[path.footprint]
-
-    def values(self):
-        return self.footprint_to_path.values()
 
     # 'mode' resembles how rejections should be treated.
     def generate_cases(self, mode):
         if mode == "trim":
-            self.trim_rejections()
+            self.exclude_rejections()
         elif mode == "collapse":
             self.collapse_rejections()
         else:
@@ -145,6 +160,30 @@ class Paths(object):
 
 
 class Answer(object):
+    """
+    This class resembles an answer to a particular question (see: Question).
+    It may have (and may not have) one or more results (see: Result),
+    associated with it. It's id (aid) is global within the whole
+    questionnaire.
+
+    It has two pieces of meaningful content: text and short text. Contrary to
+    what it says on the tin, short text can be longer than simple text and
+    is needed to describe the meaning of answer in the context of the whole
+    questionnaire, not just a particular question. I.e. a question "Do you
+    live in Russia?" will have two answers with text "Yes" and "No" and short
+    text "Lives in Russia" and "Doesn't live in Russia".
+
+    Not only particular answers add results to a particular case (see: Case).
+    They also serve for routing purposes: sometimes next question depends on
+    what you answer. This is why every answer may have (and may not have) one
+    and only one child question.
+
+    Lastly, any answer can become a rejection clause, meaning that when
+    applicant reaches it, the case, that was constructed on the way is
+    discarded and description of why an applicant can't apply for the service
+    pops up.
+    """
+
     def __init__(self, raw_answer):
         self.aid = raw_answer["id"]
         self.text = raw_answer["text"]
@@ -210,12 +249,12 @@ class Questions(object):
         return self.aid_to_answer
 
     def link_parent_answers(self):
-        for question in self.values():
+        for question in self.get_all():
             if question.raw_parent_answers is not None:
                 for aid in question.raw_parent_answers:
                     self.aid_to_answer[aid].child_question = question
 
-    def values(self):
+    def get_all(self):
         return self.qid_to_question.values()
 
     def generate_paths(self):

@@ -19,9 +19,9 @@ class TestChaplin(unittest.TestCase):
     def testGeneratedPaths(self):
         self.assertEqual(
             [str(path) for path in self.paths.get_all()],
-            ['TA 1', 'TA 2 -> TA 4', 'TA 2 -> TA 5 -> TA 6 -> TA 8',
-             'TA 2 -> TA 5 -> TA 6 -> TA 9', 'TA 2 -> TA 5 -> TA 7 -> TA 8',
-             'TA 2 -> TA 5 -> TA 7 -> TA 9', 'TA 3']
+            ['TA 0', 'TA 1 -> TA 3', 'TA 1 -> TA 4 -> TA 5 -> TA 7',
+             'TA 1 -> TA 4 -> TA 5 -> TA 8', 'TA 1 -> TA 4 -> TA 6 -> TA 7',
+             'TA 1 -> TA 4 -> TA 6 -> TA 8', 'TA 2']
         )
         self.assertEqual(
             [repr(path) for path in self.paths.get_all()],
@@ -30,11 +30,11 @@ class TestChaplin(unittest.TestCase):
         )
 
     def testPathFiltering(self):
-        self.paths.trim_rejections()
+        self.paths.exclude_rejections()
         self.assertEqual(
             [str(path) for path in self.paths.get_all()],
-            ['TA 1', 'TA 2 -> TA 4', 'TA 2 -> TA 5 -> TA 6 -> TA 8',
-             'TA 2 -> TA 5 -> TA 7 -> TA 8']
+            ['TA 0', 'TA 1 -> TA 3', 'TA 1 -> TA 4 -> TA 5 -> TA 7',
+             'TA 1 -> TA 4 -> TA 6 -> TA 7']
         )
         self.assertEqual(
             [repr(path) for path in self.paths.get_all()],
@@ -47,11 +47,11 @@ class TestChaplin(unittest.TestCase):
             cases.get_all(), key=lambda case: case.get_multipath_footprint())
         self.assertEqual(
             [str(case) for case in sorted_cases],
-            ['((0,), (1, 4, 5, 7)): Test document 1, Test document 3, '
-             'Test document 4',
-             '((1, 3),): Test document 1, Test document 2',
-             '((1, 4, 6, 7),): Test document 1, Test document 3, '
-             'Test document 5']
+            ['((0,), (1, 4, 5, 7)): Test document 0, Test document 2, '
+             'Test document 3',
+             '((1, 3),): Test document 0, Test document 1',
+             '((1, 4, 6, 7),): Test document 0, Test document 2, '
+             'Test document 4']
         )
         self.assertEqual(
             [repr(case) for case in sorted_cases],
@@ -65,18 +65,18 @@ class TestChaplin(unittest.TestCase):
             cases.get_all(), key=lambda case: case.get_multipath_footprint())
         self.assertEqual(
             [str(case) for case in sorted_cases],
-            ['((0,), (1, 4, 5, 7)): Test document 1, Test document 3, '
+            ['((0,), (1, 4, 5, 7)): Test document 0, Test document 2, '
+             'Test document 3',
+             '((1, 3),): Test document 0, Test document 1',
+             '((1, 4, 6, 7),): Test document 0, Test document 2, '
              'Test document 4',
-             '((1, 3),): Test document 1, Test document 2',
-             '((1, 4, 6, 7),): Test document 1, Test document 3, '
-             'Test document 5',
-             '(2,): Test rejection 1',
-             '(8,): Test rejection 2']
+             '((2,),): Test rejection 0',
+             '((8,),): Test rejection 1']
         )
         self.assertEqual(
             [repr(case) for case in sorted_cases],
             ['((0,), (1, 4, 5, 7)): 0, 2, 3', '((1, 3),): 0, 1',
-             '((1, 4, 6, 7),): 0, 2, 4', '(2,): 0r', '(8,): 1r']
+             '((1, 4, 6, 7),): 0, 2, 4', '((2,),): 0r', '((8,),): 1r']
         )
 
 

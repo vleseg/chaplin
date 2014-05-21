@@ -1,67 +1,67 @@
 questions:
   - id: 0
-    text: Test question 1
+    text: Test question 0
     answers:
       - id: 0
+        text: Test answer 0
+        short: TA 0
+      - id: 1
         text: Test answer 1
         short: TA 1
-      - id: 1
+      - id: 2
         text: Test answer 2
         short: TA 2
-      - id: 2
-        text: Test answer 3
-        short: TA 3
     parent_answers: null
   - id: 1
-    text: Test question 2
+    text: Test question 1
     answers:
       - id: 3
+        text: Test answer 3
+        short: TA 3
+      - id: 4
         text: Test answer 4
         short: TA 4
-      - id: 4
-        text: Test answer 5
-        short: TA 5
     parent_answers: [1]
   - id: 2
-    text: Test question 4
+    text: Test question 2
     answers:
       - id: 5
+        text: Test answer 5
+        short: TA 5
+      - id: 6
         text: Test answer 6
         short: TA 6
-      - id: 6
-        text: Test answer 7
-        short: TA 7
     parent_answers: [4]
   - id: 3
-    text: Test question 5
+    text: Test question 3
     answers:
       - id: 7
+        text: Test answer 7
+        short: TA 7
+      - id: 8
         text: Test answer 8
         short: TA 8
-      - id: 8
-        text: Test answer 9
-        short: TA 9
     parent_answers: [5,6]
 rejections:
   - id: 0
-    text: Test rejection 1
+    text: Test rejection 0
     linked_answers: [2]
   - id: 1
-    text: Test rejection 2
+    text: Test rejection 1
     linked_answers: [8]
 documents:
   - id: 0
-    text: Test document 1
+    text: Test document 0
     linked_answers: [0, 1]
   - id: 1
-    text: Test document 2
+    text: Test document 1
     linked_answers: [3]
   - id: 2
-    text: Test document 3
+    text: Test document 2
     linked_answers: [0, 4]
   - id: 3
-    text: Test document 4
+    text: Test document 3
     linked_answers: [0, 5]
   - id: 4
-    text: Test document 5
+    text: Test document 4
     linked_answers: [6]
