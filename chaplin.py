@@ -229,6 +229,8 @@ class Question(object):
         return self.answers.get_all()
 
 
+# TODO: rename to 'Questionnaire' and implement add_question, delete_question$
+# add_answer, delete_answer can go to Question calss though
 class Questions(object):
     def __init__(self, raw_questions):
         self.qid_to_question = OrderedDict()
